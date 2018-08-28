@@ -6,7 +6,7 @@ pragma solidity ^0.4.24;
 //
 // Symbol           : CEW
 // Name             : Cewnote
-// Total Supply     : 200,00,000
+// Total Supply     : 200.000.000
 // Decimals         : 18
 // ----------------------------------------------------------------------------
 
@@ -155,7 +155,7 @@ contract CewnoteToken is ERC20Interface, Ownable {
         symbol = "CEW";
         name = "Cewnote";
         decimals = 18;
-        _totalSupply = 20000000;
+        _totalSupply = 200000000;
         _totalSupply = _totalSupply.mul(10 ** uint(decimals));
         balances[msg.sender] = _totalSupply;
         emit Transfer(address(0), msg.sender, _totalSupply);
