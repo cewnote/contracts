@@ -195,6 +195,7 @@ contract CewnoteToken is ERC20Interface, Ownable {
         require(to != address(0));
         require(tokens > 0);
         require(balances[msg.sender] >= tokens);
+        require(!frozenAccount[msg.sender]);
         
         balances[msg.sender] = balances[msg.sender].sub(tokens);
         balances[to] = balances[to].add(tokens);
@@ -235,6 +236,8 @@ contract CewnoteToken is ERC20Interface, Ownable {
         require(tokens > 0);
         require(balances[from] >= tokens);
         require(allowed[from][msg.sender] >= tokens);
+        require(!frozenAccount[from]);
+
         
         balances[from] = balances[from].sub(tokens);
         allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);
@@ -304,7 +307,6 @@ contract CewnoteToken is ERC20Interface, Ownable {
     return true;
   }
 
-
   /**
    * 
    * @notice `freeze? Prevent | Allow` `target` from sending tokens
@@ -317,21 +319,20 @@ contract CewnoteToken is ERC20Interface, Ownable {
         emit FrozenFunds(target, freeze);
     }
     
-    
-    
 /**
    * @dev Internal function that burns an amount of the token of a given
    * account.
    * @param _account The account whose tokens will be burnt.
    * @param _amount The amount that will be burnt.
    */
-  function burn(address _account, uint256 _amount) internal {
+  function _burn(address _account, uint256 _amount) internal {
     require(_account != 0);
     require(_amount <= balances[_account]);
 
     _totalSupply = _totalSupply.sub(_amount);
     balances[_account] = balances[_account].sub(_amount);
     emit Transfer(_account, address(0), _amount);
+    emit Burn(msg.sender, _amount);
   }
 
   /**
@@ -347,17 +348,15 @@ contract CewnoteToken is ERC20Interface, Ownable {
     // Should https://github.com/OpenZeppelin/zeppelin-solidity/issues/707 be accepted,
     // this function needs to emit an event with the updated approval.
     allowed[_account][msg.sender] = allowed[_account][msg.sender].sub(_amount);
-    burn(_account, _amount);
+    _burn(_account, _amount);
   }
-
-
 
   /**
    * @dev Burns a specific amount of tokens.
    * @param _value The amount of token to be burned.
    */
   function burn(uint256 _value) public {
-    burn(msg.sender, _value);
+    _burn(msg.sender, _value);
   }
 
 }
