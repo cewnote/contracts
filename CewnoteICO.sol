@@ -90,52 +90,30 @@ contract Ownable {
 }
 
 
-contract token {
-
-    function balanceOf(address _owner) public constant returns (uint256 balance);
-    function transfer(address _to, uint256 _value) public returns (bool success);
-    
+interface token {
+    function balanceOf(address _owner) external constant returns (uint256 balance);
+    function transfer(address _to, uint256 _value) external returns (bool success);
 }
 
-
-contract FiatContract {
-
-    function USD(uint _id) constant public returns (uint256);
-
-}
 
 
 contract CewnoteICO is Ownable{
-    
-    FiatContract price = FiatContract(0x8055d0504666e2B6942BeB8D6014c964658Ca591); // MAINNET ADDRESS
-    //FiatContract price = FiatContract(0x2CDe56E5c8235D6360CCbb0c57Ce248Ca9C80909); // TESTNET ADDRESS (ROPSTEN)
 
     using SafeMath for uint256;
     
-    //This sale have 12 stages
+    mapping(address => uint256) public amountInvested;
+    
     enum State {
-        Week1,
-        Week2,
-        Week3,
-        Week4,
-        Week5,
-        Week6,
-        Week7,
-        Week8,
-        Week9,
-        Week10,
-        Week11,
-        Week12,
+        Active,
+        Dormant,
         Successful
     }
     
     //public variables
     State public state; //Set initial stage
-    uint256 tokenPrice; // token price
-    uint256 public hardCap = 43200000; // 43.2 million USD
-    uint256 public softCap = 980000; //  0.98 million USD
-    uint256 public totalRaised; //eth in wei
-    uint256 public totalDistributed; //tokens distributed
+    uint256 public tokenPrice; // token price
+    uint256 public totalWEIRaised; //eth in wei
+    uint256 public totalTokensDistributed; //tokens distributed
     token public tokenReward; //Address of the valid token used as reward
 
     //events for log
@@ -154,125 +132,52 @@ contract CewnoteICO is Ownable{
     
     /**
     * @notice constructor
-    * @param _addressOfTokenUsedAsReward is the token totalDistributed
     */
-    constructor(token _addressOfTokenUsedAsReward) public {
-        state = State.Week1;
-        tokenReward = token(_addressOfTokenUsedAsReward);
+    constructor() public {
+        tokenReward = token(address(0x1469427d2c1d623869aCD70b0E16aD9566f0D3f6));
         emit LogFunderInitialized(owner);
     }
 
+    
+    function changePrice(uint256 _newPrice) public onlyOwner {
+        tokenPrice = _newPrice;
+    }
+    
+    function startSale() onlyOwner public {
+        state = State.Active;
+    }
+    
+    function pauseSale() onlyOwner public {
+        state = State.Dormant;
+    }
+    
 
     /**
     * @notice contribution handler
     */
     function contribute() public notFinished payable {
+        require(msg.value >= 0.1 * 1 ether);
         
-        uint256 tokenBought; //Variable to store amount of tokens bought
-        uint256 bonus;
-        //uint256 ethCent = price.USD(0); //1 cent value in wei
-        
-        
-        // For testing -- REMOVE IT IN PRODUCTION
-        uint256 ethCent = 14915066160000;  //
+        uint256 tokenBought; 
 
+        tokenBought = msg.value.mul(tokenPrice);
+
+        totalWEIRaised = totalWEIRaised.add(msg.value);
+        totalTokensDistributed = totalTokensDistributed.add(tokenBought);
         
-        // 0.7 $ = 1 CEW & 12 % bonus
-        if (state >= State.Week1 && state <= State.Week3) {
-            tokenPrice = ethCent.mul(7); 
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(12).div(100);
-        }
-        
-        // 0.13 $ = 1 CEW & 10 % bonus
-        if (state == State.Week4){
-            tokenPrice = ethCent.mul(13);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(10).div(100);
-        }
-        
-        // 0.19 $ = 1 CEW & 10 % bonus
-        if (state == State.Week5){
-            tokenPrice = ethCent.mul(19);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(10).div(100);
-        }
-        
-        // 0.25 $ = 1 CEW & 10 % bonus
-        if (state == State.Week6){
-            tokenPrice = ethCent.mul(25);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(10).div(100);
-        }
-        
-        // 0.31 $ = 1 CEW & 8 % bonus
-        if (state == State.Week7){
-            tokenPrice = ethCent.mul(31);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(8).div(100);
-        }
-        
-        // 0.36 $ = 1 CEW & 8 % bonus
-        if (state == State.Week8){
-            tokenPrice = ethCent.mul(36);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(8).div(100);
-        }
-        
-        // 0.42 $ = 1 CEW & 6 % bonus
-        if (state == State.Week9){
-            tokenPrice = ethCent.mul(42);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(6).div(100);
-        }
-        
-        // 0.48 $ = 1 CEW & 6 % bonus
-        if (state == State.Week10){
-            tokenPrice = ethCent.mul(48);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(6).div(100);
-        }
-        
-        // 0.54 $ = 1 CEW & 4 % bonus
-        if (state == State.Week11){
-            tokenPrice = ethCent.mul(54);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(4).div(100);
-        }
-        
-        // 0.60 $ = 1 CEW & 2 % bonus
-        if (state == State.Week12){
-            tokenPrice = ethCent.mul(60);
-            tokenBought = msg.value.mul(10 ** 18).div(tokenPrice);
-            bonus = tokenBought.mul(2).div(100);
-        }
-        
-        tokenBought = tokenBought.add(bonus);
-        
-        totalRaised = totalRaised.add(msg.value); //Save the total eth totalRaised (in wei)
-        totalDistributed = totalDistributed.add(tokenBought); //Save to total tokens distributed
-        
-        tokenReward.transfer(msg.sender,tokenBought); //Send Tokens to user
         owner.transfer(msg.value); // Send ETH to owner
+        tokenReward.transfer(msg.sender,tokenBought); //Send Tokens to user
+        
+        amountInvested[msg.sender] = msg.value;
         
         //LOGS
         emit LogBeneficiaryPaid(owner);
-        emit LogFundingReceived(msg.sender, msg.value, totalRaised);
+        emit LogFundingReceived(msg.sender, msg.value, tokenBought);
         emit LogContributorsPayout(msg.sender,tokenBought);
 
     }
 
-    function nextState() onlyOwner public {
-        require(state != State.Week12);
-        state = State(uint(state) + 1);
-    }
-    
-    function previousState() onlyOwner public {
-        require(state != State.Week12);
-        state = State(uint(state) - 1);
-    }
-    
-    
+
     /**
     * @notice Function for closure handle
     */
@@ -286,20 +191,14 @@ contract CewnoteICO is Ownable{
             emit LogBeneficiaryPaid(owner);
         }
  
-        
-        tokenReward.transfer(address(0),remainder); // Burn Remaining Tokens
+        tokenReward.transfer(owner,remainder);
 
         state = State.Successful; // updating the state
     }
 
 
-    /**
-    * @notice Function to burn any tokens left after ICO
-    */
-    function burnTokens() onlyOwner public {
-        
-        uint256 remainder = tokenReward.balanceOf(this); //Check remainder tokens
-        tokenReward.transfer(address(0),remainder); // Burn Remaining Tokens
+    function tokensAvailable() public view returns(uint256) {
+        return tokenReward.balanceOf(this)*10**18;
     }
 
 
